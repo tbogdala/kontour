@@ -1,0 +1,6 @@
+/target/
+
+# dont include any generated output by the default configuration
+generated
+
+.vscode/

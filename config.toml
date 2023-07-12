@@ -1,0 +1,110 @@
+# Sample Kontour Configuration
+
+# This is the folder, relative to where the command is run, 
+# where the output is saved.
+output_folder = "generated"
+
+# The API endpoint for text-generation-webui. Make sure to run it with
+# the API enabled. This also needs to have the protocol ("http://") in there.
+api_url = "http://localhost:5000"
+
+# The timeout in seconds for API calls. Depending on how much text you're creating
+# with each instruction, you may need to increase this.
+api_timeout = 240
+
+# This message goes at the top of every context usually and replaces
+# the "{SYSTEM}" string in the prompt_formats below.
+system_message = """
+A chat between a curious human and an artificial intelligence assistant. 
+The assistant gives helpful, detailed, and polite answers to the user's questions."""
+
+# This is an array of strings that are each an instruction. A separate
+# text generation will be made for each one. They replace the "{INSTRUCTION}"
+# string in the prompt_formats below.
+instructions = [
+    "Complete this poem:\nRoses are red\nViolets are blue",
+    "Write a poem about what it means to be alive.",
+    "Describe what a derivative is in Calculus."
+]
+
+# Multiple prompt_formats are specified here for the sample models
+# configured below them. The 'name' is how to reference the format
+# from the 'models' section. 'format' controls how the system and
+# instruction strings are placed in the context string. 'stop_sequence'
+# gives text-generation-webui a chance to stop at custom strings;
+# here I just point them to the prompt tags to help prevent repeats.
+#
+# This part can be fickle. Make sure white space is intentional.
+
+[[prompt_formats]]
+name = "Alpaca"
+format = "{SYSTEM}\n### Instruction: {INSTRUCTION}\n### Response:"
+stop_sequence = ["### Instruction", "### Response"]
+
+[[prompt_formats]]
+name = "Guanaco"
+format = "{SYSTEM}\n### Human: {INSTRUCTION}\n### Assistant:"
+stop_sequence = ["### Human", "### Assistant"]
+
+[[prompt_formats]]
+name = "Tulu"
+format = "<|user|>\n{SYSTEM}\n{INSTRUCTION}\n<|assistant|>\n"
+stop_sequence = ["<|user|>", "<|assistant|>"]
+
+[[prompt_formats]]
+name = "WizardLM-V1.0"
+format = "{SYSTEM}\nUSER: {INSTRUCTION}\nASSISTANT:"
+stop_sequence = ["USER:", "ASSISTANT:"]
+
+
+# Multiple 'models' can be specified here. This is the name by which
+# text-generation-webui knows the model, which is probably the file or
+# folder name in its 'models' directory. These samples are how
+# text-generation-webui references the models that I used the built-in
+# downloader for.'format' references the name of a 'prompt_formats'
+# above so that the program can follow any instruct formatting needed.
+
+[[models]]
+name = "TheBloke_guanaco-33B-GPTQ"
+format = "Guanaco"
+
+[[models]]
+name = "TheBloke_Nous-Hermes-13B-GPTQ"
+format = "Alpaca"
+
+[[models]]
+name = "TheBloke_tulu-30B-GPTQ"
+format = "Tulu"
+
+[[models]]
+name = "TheBloke_WizardLM-30B-GPTQ"
+format = "WizardLM-V1.0"
+
+
+# Multiple 'generation_parameters' can be specified and given a 'name'
+# for convenient reference. By default, Kontour will generate text for
+# each of these sets of settings. These settings are basically copied
+# from text-generation-webui.
+
+[[generation_parameters]]
+name="default"
+max_length=512
+temperature=0.7
+top_k=20
+top_p=0.9
+typical_p=1.0
+rep_pen=1.15
+seed=42
+max_context_length=2048
+  
+[[generation_parameters]]
+name="godlike"
+max_length=512
+temperature=0.7
+top_k=0
+top_p=0.5
+typical_p=0.19
+rep_pen=1.1
+seed=42
+max_context_length=2048
+  
