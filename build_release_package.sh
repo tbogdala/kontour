@@ -29,8 +29,8 @@ SUPPORT_FILES="README.md config.toml LICENSE"
 # Set the name of the output archives
 LINUX_ARCHIVE_NAME="kontour-linux_x86_64_$RELEASE_TAG.tar.gz"
 WINDOWS_ARCHIVE_NAME="kontour-windows_x86_64_$RELEASE_TAG.zip"
-MAC_ARM_ARCHIVE_NAME="kontour_mac_aarch64_$RELEASE_TAG.zip"
-MAC_INTEL_ARCHIVE_NAME="kontour_mac_x86_64_$RELEASE_TAG.zip"
+MAC_ARM_ARCHIVE_NAME="kontour-mac_aarch64_$RELEASE_TAG.zip"
+MAC_INTEL_ARCHIVE_NAME="kontour-mac_x86_64_$RELEASE_TAG.zip"
 
 # Check if platform argument is provided
 if [ $# -ne 1 ]; then
@@ -55,6 +55,7 @@ elif [ "$PLATFORM" == "mac" ]; then
     cargo build --release --target=x86_64-apple-darwin
     rm -f "$MAC_ARM_ARCHIVE_NAME" "$MAC_INTEL_ARCHIVE_NAME"
     tar -czf "$OUTPUT_DIR/$MAC_ARM_ARCHIVE_NAME" $SUPPORT_FILES -C target/release kontour 
+    tar -czf "$OUTPUT_DIR/$MAC_INTEL_ARCHIVE_NAME" $SUPPORT_FILES -C target/x86_64-apple-darwin/release kontour 
 else
   echo "Invalid platform argument: '$PLATFORM'"
   echo "Please provide a platform argument: 'linux', 'windows' or 'mac'"
