@@ -4,7 +4,6 @@ A utility program for [text-generation-webui](https://github.com/oobabooga/text-
 that generates text responses for a configured list of instructions for each
 configured model and text generation parameter set.
 
-
 ## Requirements
 
 * A working [text-generation-webui](https://github.com/oobabooga/text-generation-webui)
@@ -34,6 +33,13 @@ next to the program. There should be another folder named with digits in that
 which, if you look closely, should match the local time the program was running. Inside
 that folder, you should see the `summary.md` report that was generated and a directory
 named `raw` that will have all of the JSON data recorded during the generation process.
+
+## Sample Output
+
+The screenshot below is from the report in the `samples` directory, which an be 
+[viewed right here](/samples/summary.md).
+
+![Screenshot of markdown summary report](/samples/Screenshot_summary_md.jpg?raw=true "Markdown summary report sample")
 
 
 ## License
