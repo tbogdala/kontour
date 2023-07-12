@@ -29,8 +29,8 @@ SUPPORT_FILES="README.md config.toml LICENSE"
 # Set the name of the output archives
 LINUX_ARCHIVE_NAME="kontour-linux_x86_64_$RELEASE_TAG.tar.gz"
 WINDOWS_ARCHIVE_NAME="kontour-windows_x86_64_$RELEASE_TAG.zip"
-MAC_ARM_ARCHIVE_NAME="kontour-mac_aarch64_$RELEASE_TAG.zip"
-MAC_INTEL_ARCHIVE_NAME="kontour-mac_x86_64_$RELEASE_TAG.zip"
+MAC_ARM_ARCHIVE_NAME="kontour-mac_aarch64_$RELEASE_TAG.tar.gz"
+MAC_INTEL_ARCHIVE_NAME="kontour-mac_x86_64_$RELEASE_TAG.tar.gz"
 
 # Check if platform argument is provided
 if [ $# -ne 1 ]; then
