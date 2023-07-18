@@ -300,6 +300,12 @@ fn main() {
     // parse the command-line arguments
     let cmd_arg_matches = clap::Command::new("kontour")
         .about("Kontour: a configurable large language model sampler.")
+        .arg(clap::Arg::new("config-file")
+            .short('f')
+            .long("config-file")
+            .action(clap::ArgAction::Set)
+            .value_name("FILE")
+            .help("Use the specified configuration file instead of the default config.toml file."))
         .arg(clap::Arg::new("regenerate-report")
             .long("regenerate-report")
             .value_name("json directory path")
@@ -308,7 +314,11 @@ fn main() {
         .get_matches();
 
     // load up the configuration file
-    let app_config = match config::get_app_config(CONFIG_FILENAME) {
+    let cfg_filename = match cmd_arg_matches.get_one::<String>("config-file") {
+        Some(arg_config_file) => arg_config_file,
+        None => CONFIG_FILENAME
+    };
+    let app_config = match config::get_app_config(cfg_filename) {
         Ok(c) => c,
         Err(err) => {
             log::error!("Couldn't load the configuration file: {err}");
@@ -319,7 +329,6 @@ fn main() {
         app_config.instructions.len(),
         app_config.models.len(),
         app_config.generation_parameters.len());
-
 
     // are we to only generate the report?
     if let Some(report_dir) = cmd_arg_matches.get_one::<String>("regenerate-report") {
