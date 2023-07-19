@@ -1,5 +1,6 @@
 mod config;
 use config::TextgenParameters;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use simple_logger::SimpleLogger;
 use std::{path::{Path, PathBuf}, io::Write, collections::HashMap};
@@ -148,34 +149,86 @@ fn get_prompt_format(config: &config::Config, model: &config::ModelOptions) -> O
     None
 }
 
+// takes an instruction in and searches it for any tags matching an InstructionGroupOptions name.
+// if a match is found, a random item from InstructionGroupOptions.substitutions is placed into the instruction.
+// NOTE: there can be multiple substitutions that take place; currently substitutes the same random pick for all occurrences of 'name'.
+// NOTE: the order of processing for instruction_groups is currently not guaranteed, so chaining substitutions may not be reliable.
+// a new string is always returned.
+fn process_inst_group_substitutions(config: &config::Config, instruction: &String) -> String {
+    let mut ret_string = instruction.clone();
+    let mut rng = rand::thread_rng();
+        
+    for inst_group in &config.instruction_groups {
+        if ret_string.contains(inst_group.name.as_str()) {
+            let sub_count = inst_group.substitutes.len();
+            let chosen_sub = if sub_count == 1 { 0 } else { rng.gen_range(0..sub_count) };
+
+            ret_string = ret_string.replace(inst_group.name.as_str(), inst_group.substitutes[chosen_sub].as_str());
+        }
+    }
+
+    return ret_string;
+}
+
 // loops through the configuration and builds a job for each combination of
 // instruction * model * generation_parameters
-fn build_jobs(config: &config::Config) -> Vec<TextgenJob> {
+fn build_jobs(config: &config::Config, random_count_opt: Option<&u32>) -> Vec<TextgenJob> {
     let mut jobs: Vec<TextgenJob> = Vec::new();
 
-    // loop through all the models
-    for model in &config.models {
-        let pf_opt = get_prompt_format(config, model);
-        if let Some(pf) = pf_opt {
-            // loop through all the instructions
-            for inst in &config.instructions {
-                // loop through all of the parameter sets
-                for params in &config.generation_parameters {
-                    let new_job = TextgenJob{
-                        system_message: config.system_message.clone(),
-                        instruction: inst.clone(),
-                        model: model.clone(),
-                        prompt_format: pf.clone(),
-                        parameters: params.clone(),
-                        generated_text_output: None,
-                        };
-                    jobs.push(new_job);
-                }
+    if let Some(random_job_count) = random_count_opt {
+        log::info!("Setting up {} randomized jobs.", random_job_count);
+        
+        let mut rng = rand::thread_rng();
+        let model_count = config.models.len();
+        let inst_count = config.instructions.len();
+        let param_count = config.generation_parameters.len();
+
+        for _ in 0..*random_job_count {
+            let chosen_model = if model_count == 1 { 0 } else { rng.gen_range(0..model_count) };
+            let chosen_inst = if inst_count == 1 { 0 } else { rng.gen_range(0..inst_count) };
+            let chosen_param = if param_count == 1 { 0 } else { rng.gen_range(0..param_count) };
+
+            let pf_opt = get_prompt_format(config, &config.models[chosen_model]);
+            if let Some(pf) = pf_opt {
+                
+                let new_job = TextgenJob{
+                    system_message: process_inst_group_substitutions(config, &config.system_message),
+                    instruction: process_inst_group_substitutions(config, &config.instructions[chosen_inst]),
+                    model: config.models[chosen_model].clone(),
+                    prompt_format: pf.clone(),
+                    parameters: config.generation_parameters[chosen_param].clone(),
+                    generated_text_output: None,
+                    };
+                jobs.push(new_job);
+            } else {
+                log::error!("Job skipped because a prompt format could not be found for model {}", config.models[chosen_model].name)
             }
-        } else {
-            log::error!("Could not find a configured 'prompt_formats' with a name matching the model's delcared format: {}.", model.format);
-            log::error!("Skipping tasks for model '{}' due to this error.", model.name);
-            continue;
+        }     
+    } else {
+        // loop through all the models
+        for model in &config.models {
+            let pf_opt = get_prompt_format(config, model);
+            if let Some(pf) = pf_opt {
+                // loop through all the instructions
+                for inst in &config.instructions {
+                    // loop through all of the parameter sets
+                    for params in &config.generation_parameters {
+                        let new_job = TextgenJob{
+                            system_message: process_inst_group_substitutions(config, &config.system_message),
+                            instruction: process_inst_group_substitutions(config, inst),
+                            model: model.clone(),
+                            prompt_format: pf.clone(),
+                            parameters: params.clone(),
+                            generated_text_output: None,
+                            };
+                        jobs.push(new_job);
+                    }
+                }
+            } else {
+                log::error!("Could not find a configured 'prompt_formats' with a name matching the model's delcared format: {}.", model.format);
+                log::error!("Skipping tasks for model '{}' due to this error.", model.name);
+                continue;
+            }
         }
     }
 
@@ -311,6 +364,13 @@ fn main() {
             .value_name("json directory path")
             .action(clap::ArgAction::Append)
             .help("Only generate a report for the generated JSON files in the specified directory."))
+        .arg(clap::Arg::new("randomize-instruction")
+            .short('r')
+            .long("randomize")
+            .action(clap::ArgAction::Set)
+            .value_name("COUNT")
+            .value_parser(clap::value_parser!(u32))
+            .help("Randomize the selection of the instruction to user in generation and run the specified number of jobs total."))
         .get_matches();
 
     // load up the configuration file
@@ -350,7 +410,7 @@ fn main() {
     }
 
     // build up the job list based on our configuration
-    let mut jobs = build_jobs(&app_config);
+    let mut jobs = build_jobs(&app_config, cmd_arg_matches.get_one::<u32>("randomize-instruction"));
     log::info!("Built a job list with {} task(s).", jobs.len());
 
 

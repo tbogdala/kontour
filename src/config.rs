@@ -5,6 +5,7 @@ use std::error::Error;
 pub struct Config {
     pub system_message: String,
     pub instructions: Vec<String>,
+    pub instruction_groups: Vec<InstructionGroupOptions>,
     pub prompt_formats: Vec<PromptFormatOptions>,
     pub models: Vec<ModelOptions>,
     pub generation_parameters: Vec<TextgenParameters>,
@@ -25,6 +26,12 @@ pub struct PromptFormatOptions {
     pub name: String,
     pub format: String,
     pub stop_sequence: Option<Vec<String>>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
+pub struct InstructionGroupOptions {
+    pub name: String,
+    pub substitutes: Vec<String>,
 }
 
 
