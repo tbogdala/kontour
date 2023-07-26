@@ -1,0 +1,39 @@
+python qlora.py \
+    --model_name_or_path openlm-research/open_llama_7b \
+    --output_dir ./output/open_llama_7b_kent \
+    --logging_steps 1 \
+    --save_strategy steps \
+    --data_seed 42 \
+    --save_steps 100 \
+    --save_total_limit 40 \
+    --max_new_tokens 32 \
+    --dataloader_num_workers 3 \
+    --logging_strategy steps \
+    --remove_unused_columns False \
+    --do_train \
+    --do_mmlu_eval False \
+    --lora_r 64 \
+    --lora_alpha 16 \
+    --lora_modules all \
+    --double_quant \
+    --quant_type nf4 \
+    --bf16 \
+    --bits 4 \
+    --warmup_ratio 0.03 \
+    --lr_scheduler_type constant \
+    --gradient_checkpointing \
+    --dataset kent-merged-dataset.jsonl  \
+    --dataset_format oasst1 \
+    --source_max_len 16 \
+    --target_max_len 2048 \
+    --group_by_length False \
+    --per_device_train_batch_size 1 \
+    --gradient_accumulation_steps 16 \
+    --max_steps 132 \
+    --learning_rate 0.00004 \
+    --adam_beta2 0.999 \
+    --max_grad_norm 0.3 \
+    --lora_dropout 0.1 \
+    --weight_decay 0.0 \
+    --seed 0 \
+    --max_memory_MB 23000

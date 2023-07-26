@@ -1,10 +1,14 @@
 /target/
 
 # dont include any generated output by the default configuration
-generated
+generated*
 
 .vscode/
 .DS_Store
 
 # these are development configurations for testing and I dont want them committed.
 config-*.toml
+
+# these would all be working files on my local machine
+data-cleaning/generated*
+data-cleaning/log.txt

@@ -5,7 +5,7 @@ use std::error::Error;
 pub struct Config {
     pub system_message: String,
     pub instructions: Vec<String>,
-    pub instruction_groups: Vec<InstructionGroupOptions>,
+    pub instruction_groups: Option<Vec<InstructionGroupOptions>>,
     pub prompt_formats: Vec<PromptFormatOptions>,
     pub models: Vec<ModelOptions>,
     pub generation_parameters: Vec<TextgenParameters>,
@@ -13,7 +13,6 @@ pub struct Config {
     pub api_url: String,
     pub api_timeout: u64,
 }
-
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 pub struct ModelOptions {
@@ -34,7 +33,6 @@ pub struct InstructionGroupOptions {
     pub substitutes: Vec<String>,
 }
 
-
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 pub struct TextgenParameters {
     pub name: String,
@@ -47,7 +45,6 @@ pub struct TextgenParameters {
     pub seed: i64,
     pub max_context_length: u16,
 }
-
 
 pub fn get_app_config(filename: &str) -> Result<Config, Box<dyn Error>> {
     // open the configuration file and read it into a string

@@ -3,8 +3,11 @@ use config::TextgenParameters;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use simple_logger::SimpleLogger;
-use std::{path::{Path, PathBuf}, io::Write, collections::HashMap};
-
+use std::{
+    collections::HashMap,
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 const CONFIG_FILENAME: &str = "config.toml";
 const CONFIG_SYSTEM_PROMPT_TAG: &str = "{SYSTEM}";
@@ -12,37 +15,55 @@ const CONFIG_INSTRUCTION_PROMPT_TAG: &str = "{INSTRUCTION}";
 const RAW_FOLDER_NAME: &str = "raw";
 const REPORT_FILENAME: &str = "summary.md";
 
-
 // executes the job passed to it and returns true if execution
 // of further jobs should be continue.
 fn run_job(config: &config::Config, job: &mut TextgenJob) -> bool {
     // adjust the timeout of the API calls -- configurable
     let client = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(config.api_timeout))
-        .build().expect("Failed to create the blocking reqwest client.");
-    
+        .build()
+        .expect("Failed to create the blocking reqwest client.");
+
     // get the current model from the server
     let model_query_url = format!("{}{}", config.api_url, "/api/v1/model");
-    log::debug!("Attempting to query the endpoint to determine the active model: {}", &model_query_url);
-    let active_model_json = client.get(&model_query_url)
+    log::debug!(
+        "Attempting to query the endpoint to determine the active model: {}",
+        &model_query_url
+    );
+    let active_model_json = client
+        .get(&model_query_url)
         .header(reqwest::header::CONTENT_TYPE, "application/json")
-        .send().expect("API call failed for querying the loaded model.")
-        .text().expect("API call didn't return text for querying the loaded model.");
+        .send()
+        .expect("API call failed for querying the loaded model.")
+        .text()
+        .expect("API call didn't return text for querying the loaded model.");
     let active_model_v: serde_json::Value = serde_json::from_str(&active_model_json)
         .expect("Unable to deserialize JSON for querying the loaded model.");
-    let active_model = active_model_v["result"].as_str().expect("Unable to deserialize JSON for querying the loaded model.");
-    
+    let active_model = active_model_v["result"]
+        .as_str()
+        .expect("Unable to deserialize JSON for querying the loaded model.");
+
     // if this model is different than the job's requested model then load the job's model
     if active_model.eq_ignore_ascii_case(&job.model.name.as_str()) == false {
         log::info!("Attempting to change active model to {}", &job.model.name);
-        let req_body = format!("{{\"action\": \"load\", \"model_name\": \"{0}\"}}", &job.model.name);
-        let loading_resp = client.post(&model_query_url).body(req_body)
+        let req_body = format!(
+            "{{\"action\": \"load\", \"model_name\": \"{0}\"}}",
+            &job.model.name
+        );
+        let loading_resp = client
+            .post(&model_query_url)
+            .body(req_body)
             .header(reqwest::header::CONTENT_TYPE, "application/json")
             .header(reqwest::header::ACCEPT, "application/json")
-            .send().expect("API call failed for loading a different model.");
+            .send()
+            .expect("API call failed for loading a different model.");
         if loading_resp.status() != reqwest::StatusCode::OK {
-            log::error!("Failed to change the model to {0} at endpoint {1}. Status: {2}", 
-                &job.model.name, &model_query_url, loading_resp.status());
+            log::error!(
+                "Failed to change the model to {0} at endpoint {1}. Status: {2}",
+                &job.model.name,
+                &model_query_url,
+                loading_resp.status()
+            );
             return false;
         }
         // the response bytes has to get called in order for it to wait while the server switches models.
@@ -52,10 +73,13 @@ fn run_job(config: &config::Config, job: &mut TextgenJob) -> bool {
     }
 
     // setup the prompt based on the information in the job
-    let prompt = job.prompt_format.format.clone()
+    let prompt = job
+        .prompt_format
+        .format
+        .clone()
         .replace(CONFIG_SYSTEM_PROMPT_TAG, &job.system_message)
         .replace(CONFIG_INSTRUCTION_PROMPT_TAG, &job.instruction);
-  
+
     // make the request data structures
     let textgen_url = format!("{}{}", config.api_url, "/api/v1/generate");
     let textgen_request = TextgenRemoteRequest {
@@ -74,15 +98,22 @@ fn run_job(config: &config::Config, job: &mut TextgenJob) -> bool {
         .expect("Failed to serialize the API parameters for the text generation request.");
 
     // make the text generation request and pull out the generated string
-    let textgen_resp = client.post(&textgen_url).body(textgen_request_json)
+    let textgen_resp = client
+        .post(&textgen_url)
+        .body(textgen_request_json)
         .header(reqwest::header::CONTENT_TYPE, "application/json")
         .header(reqwest::header::ACCEPT, "application/json")
-        .send().expect("API call failed for generating text from a prompt");
+        .send()
+        .expect("API call failed for generating text from a prompt");
     if textgen_resp.status() != reqwest::StatusCode::OK {
-        log::error!("Failed to generate text for the given prompt. Status: {}", textgen_resp.status());
+        log::error!(
+            "Failed to generate text for the given prompt. Status: {}",
+            textgen_resp.status()
+        );
         return false;
     }
-    let textgen_resp_text = textgen_resp.text()
+    let textgen_resp_text = textgen_resp
+        .text()
         .expect("Failed to get the JSON from the text generation response body.");
     let textgen_resp: TextgenResponseBody = serde_json::from_str(&textgen_resp_text)
         .expect("Failed to deserialize the JSON from the text generation response body.");
@@ -100,13 +131,13 @@ fn run_job(config: &config::Config, job: &mut TextgenJob) -> bool {
 // Used to deserialize the text generation response body JSON into a strongly typed object.
 #[derive(Deserialize, Debug, Clone)]
 pub struct TextgenResponseBody {
-    results: Vec<TextgenResponseBodyResult>
+    results: Vec<TextgenResponseBodyResult>,
 }
 
 // Used to deserialize the text generation response body JSON into a strongly typed object.
 #[derive(Deserialize, Debug, Clone)]
 pub struct TextgenResponseBodyResult {
-    text: String
+    text: String,
 }
 
 // Used to serialize into JSON from a strongly typed object for API calls.
@@ -137,10 +168,12 @@ struct TextgenJob {
     generated_text_output: Option<String>,
 }
 
-
 // utility function that pulls the matching PromptFormatOptions from the configuration
 // based on the name used in the ModelOptions.
-fn get_prompt_format(config: &config::Config, model: &config::ModelOptions) -> Option<config::PromptFormatOptions> {
+fn get_prompt_format(
+    config: &config::Config,
+    model: &config::ModelOptions,
+) -> Option<config::PromptFormatOptions> {
     for pf in &config.prompt_formats {
         if pf.name.eq_ignore_ascii_case(model.format.as_str()) {
             return Some(pf.clone());
@@ -157,16 +190,24 @@ fn get_prompt_format(config: &config::Config, model: &config::ModelOptions) -> O
 fn process_inst_group_substitutions(config: &config::Config, instruction: &String) -> String {
     let mut ret_string = instruction.clone();
     let mut rng = rand::thread_rng();
-        
-    for inst_group in &config.instruction_groups {
-        if ret_string.contains(inst_group.name.as_str()) {
-            let sub_count = inst_group.substitutes.len();
-            let chosen_sub = if sub_count == 1 { 0 } else { rng.gen_range(0..sub_count) };
 
-            ret_string = ret_string.replace(inst_group.name.as_str(), inst_group.substitutes[chosen_sub].as_str());
+    if let Some(inst_groups) = &config.instruction_groups {
+        for inst_group in inst_groups {
+            if ret_string.contains(inst_group.name.as_str()) {
+                let sub_count = inst_group.substitutes.len();
+                let chosen_sub = if sub_count == 1 {
+                    0
+                } else {
+                    rng.gen_range(0..sub_count)
+                };
+
+                ret_string = ret_string.replace(
+                    inst_group.name.as_str(),
+                    inst_group.substitutes[chosen_sub].as_str(),
+                );
+            }
         }
     }
-
     return ret_string;
 }
 
@@ -177,33 +218,53 @@ fn build_jobs(config: &config::Config, random_count_opt: Option<&u32>) -> Vec<Te
 
     if let Some(random_job_count) = random_count_opt {
         log::info!("Setting up {} randomized jobs.", random_job_count);
-        
+
         let mut rng = rand::thread_rng();
         let model_count = config.models.len();
         let inst_count = config.instructions.len();
         let param_count = config.generation_parameters.len();
 
         for _ in 0..*random_job_count {
-            let chosen_model = if model_count == 1 { 0 } else { rng.gen_range(0..model_count) };
-            let chosen_inst = if inst_count == 1 { 0 } else { rng.gen_range(0..inst_count) };
-            let chosen_param = if param_count == 1 { 0 } else { rng.gen_range(0..param_count) };
+            let chosen_model = if model_count == 1 {
+                0
+            } else {
+                rng.gen_range(0..model_count)
+            };
+            let chosen_inst = if inst_count == 1 {
+                0
+            } else {
+                rng.gen_range(0..inst_count)
+            };
+            let chosen_param = if param_count == 1 {
+                0
+            } else {
+                rng.gen_range(0..param_count)
+            };
 
             let pf_opt = get_prompt_format(config, &config.models[chosen_model]);
             if let Some(pf) = pf_opt {
-                
-                let new_job = TextgenJob{
-                    system_message: process_inst_group_substitutions(config, &config.system_message),
-                    instruction: process_inst_group_substitutions(config, &config.instructions[chosen_inst]),
+                let new_job = TextgenJob {
+                    system_message: process_inst_group_substitutions(
+                        config,
+                        &config.system_message,
+                    ),
+                    instruction: process_inst_group_substitutions(
+                        config,
+                        &config.instructions[chosen_inst],
+                    ),
                     model: config.models[chosen_model].clone(),
                     prompt_format: pf.clone(),
                     parameters: config.generation_parameters[chosen_param].clone(),
                     generated_text_output: None,
-                    };
+                };
                 jobs.push(new_job);
             } else {
-                log::error!("Job skipped because a prompt format could not be found for model {}", config.models[chosen_model].name)
+                log::error!(
+                    "Job skipped because a prompt format could not be found for model {}",
+                    config.models[chosen_model].name
+                )
             }
-        }     
+        }
     } else {
         // loop through all the models
         for model in &config.models {
@@ -213,26 +274,32 @@ fn build_jobs(config: &config::Config, random_count_opt: Option<&u32>) -> Vec<Te
                 for inst in &config.instructions {
                     // loop through all of the parameter sets
                     for params in &config.generation_parameters {
-                        let new_job = TextgenJob{
-                            system_message: process_inst_group_substitutions(config, &config.system_message),
+                        let new_job = TextgenJob {
+                            system_message: process_inst_group_substitutions(
+                                config,
+                                &config.system_message,
+                            ),
                             instruction: process_inst_group_substitutions(config, inst),
                             model: model.clone(),
                             prompt_format: pf.clone(),
                             parameters: params.clone(),
                             generated_text_output: None,
-                            };
+                        };
                         jobs.push(new_job);
                     }
                 }
             } else {
                 log::error!("Could not find a configured 'prompt_formats' with a name matching the model's delcared format: {}.", model.format);
-                log::error!("Skipping tasks for model '{}' due to this error.", model.name);
+                log::error!(
+                    "Skipping tasks for model '{}' due to this error.",
+                    model.name
+                );
                 continue;
             }
         }
     }
 
-    return jobs
+    return jobs;
 }
 
 // for a given directory path, search out non-recursively to find all .json files
@@ -259,15 +326,24 @@ fn deserialize_all_job_files_for_dir(dir_path: &Path) -> Vec<TextgenJob> {
     let mut thawed_jobs: Vec<TextgenJob> = Vec::new();
     for json_file_path in matched_json_files {
         match std::fs::read_to_string(&json_file_path) {
-            Err(err) => log::error!("Unable to read a JSON file ({}) for the report: {}", &json_file_path.to_string_lossy(), err),
-            Ok(file_data_str) => {
-                match serde_json::from_str::<TextgenJob>(&file_data_str) {
-                    Err(err) => log::error!("Unable to deserialize JSON file ({}) for the report: {}", &json_file_path.to_string_lossy(), err),
-                    Ok(dethawed_job) => thawed_jobs.push(dethawed_job)
-                }
-            }
+            Err(err) => log::error!(
+                "Unable to read a JSON file ({}) for the report: {}",
+                &json_file_path.to_string_lossy(),
+                err
+            ),
+            Ok(file_data_str) => match serde_json::from_str::<TextgenJob>(&file_data_str) {
+                Err(err) => log::error!(
+                    "Unable to deserialize JSON file ({}) for the report: {}",
+                    &json_file_path.to_string_lossy(),
+                    err
+                ),
+                Ok(dethawed_job) => thawed_jobs.push(dethawed_job),
+            },
         }
-        log::trace!("Deserialized job file from JSON: {}", &json_file_path.to_string_lossy())
+        log::trace!(
+            "Deserialized job file from JSON: {}",
+            &json_file_path.to_string_lossy()
+        )
     }
 
     thawed_jobs
@@ -275,15 +351,19 @@ fn deserialize_all_job_files_for_dir(dir_path: &Path) -> Vec<TextgenJob> {
 
 // writes a markdown file in the output folder that contains the prompts and outputs
 // for all of the text generation jobs.
-fn generate_report(jobs: Vec<TextgenJob>, report_dir_path: &Path) {
+fn generate_report(jobs: Vec<TextgenJob>, report_dir_path: &Path, sort_report: bool) {
     // create the report file to write to
     let report_filepath = report_dir_path.join(REPORT_FILENAME);
     let mut report_file = match std::fs::File::create(&report_filepath) {
         Err(err) => {
-            log::error!("Unable to create the report file ({}): {}", report_filepath.to_string_lossy(), err);
+            log::error!(
+                "Unable to create the report file ({}): {}",
+                report_filepath.to_string_lossy(),
+                err
+            );
             return;
         }
-        Ok(f) => f
+        Ok(f) => f,
     };
 
     // in this process we're going to keep track of the parameters used by just matching
@@ -292,25 +372,29 @@ fn generate_report(jobs: Vec<TextgenJob>, report_dir_path: &Path) {
 
     // write the preamble for the file
     let preamble = "# Kontour Report\nThis is a summary document containing all of the generated text organized by instructions.\n\n";
-    report_file.write_all(preamble.as_bytes()).expect("Failed to write the preample of the report.");
+    report_file
+        .write_all(preamble.as_bytes())
+        .expect("Failed to write the preample of the report.");
 
-
-    // sort the vector by instruction then model name then parameters name so that all 
+    // sort the vector by instruction then model name then parameters name so that all
     // of the generations for a given instruction using the same model are grouped together.
     // makes the report look nicer.
     let mut sorted_jobs = jobs;
-    sorted_jobs.sort_by(|a, b| {
-        if a.instruction == b.instruction {
-            if a.model.name == b.model.name {
-                a.parameters.name.cmp(&b.parameters.name)
+    if sort_report {
+        log::info!("Sorting jobs for the report, first by instruction, then by model name an finally by parameter set.");
+        sorted_jobs.sort_by(|a, b| {
+            if a.instruction == b.instruction {
+                if a.model.name == b.model.name {
+                    a.parameters.name.cmp(&b.parameters.name)
+                } else {
+                    a.model.name.cmp(&b.model.name)
+                }
             } else {
-                a.model.name.cmp(&b.model.name)
+                a.instruction.cmp(&b.instruction)
             }
-        } else {
-            a.instruction.cmp(&b.instruction)
-        }
-    });
-
+        });
+    }
+    
     // the vector should be sorted, so now we iterate over all of them and keep track
     // of when the instruction changes so we can write a new header.
     let mut current_instruction = String::new();
@@ -319,36 +403,64 @@ fn generate_report(jobs: Vec<TextgenJob>, report_dir_path: &Path) {
             // instruction change detected so write out the new instruction header
             current_instruction = matched_job.instruction;
             let instr_header_text = format!("\n## Instruction Generation Set\n\nThese are the results for the following prompt:\n\n```\n{}\n```\n\n", current_instruction);
-            report_file.write_all(instr_header_text.as_bytes()).expect("Failed to write the instruction header of the report.");
+            report_file
+                .write_all(instr_header_text.as_bytes())
+                .expect("Failed to write the instruction header of the report.");
         }
 
-        let output_text = matched_job.generated_text_output.clone().unwrap_or("<Did not generate a result.>".to_string());
-        report_file.write_all(format!("### {} (parameters: {})\n\n{}\n\n",
-            matched_job.model.name,
-            matched_job.parameters.name,
-            output_text).as_bytes()).expect("Failed to write generated output to instruction section of report.");
+        let output_text = matched_job
+            .generated_text_output
+            .clone()
+            .unwrap_or("<Did not generate a result.>".to_string());
+        report_file
+            .write_all(
+                format!(
+                    "### {} (parameters: {})\n\n{}\n\n",
+                    matched_job.model.name, matched_job.parameters.name, output_text
+                )
+                .as_bytes(),
+            )
+            .expect("Failed to write generated output to instruction section of report.");
 
         // keep track of the used parameters if it isn't already tracked
         if !gen_parameters.contains_key(matched_job.parameters.name.as_str()) {
-            log::trace!("Tracking generation parameter set '{}'", matched_job.parameters.name.as_str());
-            gen_parameters.insert(matched_job.parameters.name.clone(), matched_job.parameters.clone());
+            log::trace!(
+                "Tracking generation parameter set '{}'",
+                matched_job.parameters.name.as_str()
+            );
+            gen_parameters.insert(
+                matched_job.parameters.name.clone(),
+                matched_job.parameters.clone(),
+            );
         }
     }
 
-    
     // write out the appendix with the generation parameters used
     let appendix_text = format!("\n\n## Appendix\n\n");
-    report_file.write_all(appendix_text.as_bytes()).expect("Failed to write the appendix header of the report.");
+    report_file
+        .write_all(appendix_text.as_bytes())
+        .expect("Failed to write the appendix header of the report.");
 
     for (param_set_name, param_set) in gen_parameters {
-        report_file.write_all(format!("### Parameter set: ({})\n\n{:?}\n\n",param_set_name, param_set).as_bytes())
+        report_file
+            .write_all(
+                format!(
+                    "### Parameter set: ({})\n\n{:?}\n\n",
+                    param_set_name, param_set
+                )
+                .as_bytes(),
+            )
             .expect("Failed to write generated output to instruction section of report.");
     }
 }
 
-
 fn main() {
-    SimpleLogger::new().with_level(log::LevelFilter::Info).env().with_colors(true).init().unwrap();
+    SimpleLogger::new()
+        .with_level(log::LevelFilter::Info)
+        .env()
+        .with_colors(true)
+        .init()
+        .unwrap();
 
     // parse the command-line arguments
     let cmd_arg_matches = clap::Command::new("kontour")
@@ -364,6 +476,10 @@ fn main() {
             .value_name("json directory path")
             .action(clap::ArgAction::Append)
             .help("Only generate a report for the generated JSON files in the specified directory."))
+        .arg(clap::Arg::new("unsorted-report")
+            .long("unsorted-report")
+            .action(clap::ArgAction::SetTrue)
+            .help("Skips the sorting process of the responses by instruction > model name > parameter set name."))
         .arg(clap::Arg::new("randomize-instruction")
             .short('r')
             .long("randomize")
@@ -376,7 +492,7 @@ fn main() {
     // load up the configuration file
     let cfg_filename = match cmd_arg_matches.get_one::<String>("config-file") {
         Some(arg_config_file) => arg_config_file,
-        None => CONFIG_FILENAME
+        None => CONFIG_FILENAME,
     };
     let app_config = match config::get_app_config(cfg_filename) {
         Ok(c) => c,
@@ -392,12 +508,18 @@ fn main() {
 
     // are we to only generate the report?
     if let Some(report_dir) = cmd_arg_matches.get_one::<String>("regenerate-report") {
-        log::info!("Generating the report for files in the directory: {}", report_dir);
+        log::info!(
+            "Generating the report for files in the directory: {}",
+            report_dir
+        );
 
         // find all valid directory entries that are a file with a .json extension
         let mut report_dir_path = Path::new(report_dir);
         let dethawed_jobs = deserialize_all_job_files_for_dir(&report_dir_path);
-        log::info!("Found {} job(s) in the directory supplied.", dethawed_jobs.len());
+        log::info!(
+            "Found {} job(s) in the directory supplied.",
+            dethawed_jobs.len()
+        );
 
         // now we put the report into the parent directory, if there is one.
         if let Some(p) = report_dir_path.parent() {
@@ -405,30 +527,35 @@ fn main() {
         }
 
         // generate the report and quit
-        generate_report(dethawed_jobs, report_dir_path);
+        let leave_unsorted = cmd_arg_matches.get_flag("unsorted-report");
+        generate_report(dethawed_jobs, report_dir_path, !leave_unsorted);
         std::process::exit(0);
     }
 
     // build up the job list based on our configuration
-    let mut jobs = build_jobs(&app_config, cmd_arg_matches.get_one::<u32>("randomize-instruction"));
+    let mut jobs = build_jobs(
+        &app_config,
+        cmd_arg_matches.get_one::<u32>("randomize-instruction"),
+    );
     log::info!("Built a job list with {} task(s).", jobs.len());
-
 
     // make sure the output folders exist
     let now = chrono::Local::now();
     let output_dir_name = now.format("%Y%m%d%H%M%S").to_string();
-    let raw_folder_path = Path::new(&app_config.output_folder).join(output_dir_name).join(RAW_FOLDER_NAME);
-    std::fs::create_dir_all(&raw_folder_path).expect("Failed to create the output folder structure in the filesystem.");
-
+    let raw_folder_path = Path::new(&app_config.output_folder)
+        .join(output_dir_name)
+        .join(RAW_FOLDER_NAME);
+    std::fs::create_dir_all(&raw_folder_path)
+        .expect("Failed to create the output folder structure in the filesystem.");
 
     // execute the jobs
     let mut job_index = 0;
     for job in jobs.iter_mut() {
         job_index += 1;
-        
+
         log::info!("Starting execution of job #{}", job_index);
         run_job(&app_config, job);
-        
+
         // do the file name calculations
         let run_filename = format!("{:08}.json", job_index);
         let full_output_filepath = raw_folder_path.join(&run_filename);
@@ -437,20 +564,33 @@ fn main() {
 
         {
             // serialize the result out to the raw file
-            let mut raw_file = std::fs::File::create(&full_output_filepath)
-                .expect(format!("Failed to create the output file: {:?}", &full_output_filepath).as_str());
-            raw_file.write_all(job_raw_json.as_bytes()).expect("Failed to write all of the raw JSON to the job output file.");
-            raw_file.flush().expect("Failed to flush the output for the raw JSON job file.");
+            let mut raw_file = std::fs::File::create(&full_output_filepath).expect(
+                format!(
+                    "Failed to create the output file: {:?}",
+                    &full_output_filepath
+                )
+                .as_str(),
+            );
+            raw_file
+                .write_all(job_raw_json.as_bytes())
+                .expect("Failed to write all of the raw JSON to the job output file.");
+            raw_file
+                .flush()
+                .expect("Failed to flush the output for the raw JSON job file.");
         }
-        
+
         log::debug!("Finished execution of job #{}", job_index);
     }
     log::info!("Finished running the jobs.");
 
     // generate the report and quit
     let report_dir_path = raw_folder_path.parent().unwrap();
-    log::info!("Generating the report for files in the directory: {}", &report_dir_path.to_string_lossy());
-    generate_report(jobs, report_dir_path);
+    log::info!(
+        "Generating the report for files in the directory: {}",
+        &report_dir_path.to_string_lossy()
+    );
+    let leave_unsorted = cmd_arg_matches.get_flag("unsorted-report");
+    generate_report(jobs, report_dir_path, !leave_unsorted);
 
     log::info!("Report has been generated.")
 }
