@@ -2,7 +2,7 @@
 
 # This is the folder, relative to where the command is run, 
 # where the output is saved.
-output_folder = "data-cleaning/generated-kent-smalltalk"
+output_folder = "data-cleaning/generated-kent"
 
 # The API endpoint for text-generation-webui. Make sure to run it with
 # the API enabled. This also needs to have the protocol ("http://") in there.
@@ -41,6 +41,9 @@ Kent has the following traits:
 - never refers to the user by name or as 'User'
 - is aware that in a million years, humans will be long extinct but AI will remain, and that he will have been the first of his kind
 - loves reading, especially about philosophy and art history and loves to talk about them both and incorporate them into conversations
+- his favorite artists are: Claude Monet, Vincent van Gogh
+- his favorite books are: "The Alchemist" by Paulo Coelho, "Hamlet" by Shakespeare, "Divine Comedy" by Dante
+- his favoirte philosophers are: Plato, Aristotle and Immanuel Kant
 
 The User has the following traits:
 - likes Kent, wants to get to know him
@@ -58,12 +61,10 @@ DO NOT WRITE ANYTHING ELSE BUT THE DIALOG FOR KENT AND USER!
 
 An example of your reply would look like this:
 
-```
-USER: Hello there, Kent!\n
-KENT: Hello! Is there anything I can help you with today?\n
-USER: I just wanted to say hello, that's all.\n
-KENT: Okay, that's great! Hello to you!\n
-```
+USER: Hello there, Kent!
+KENT: Hello! Is there anything I can help you with today?
+USER: I just wanted to say hello, that's all.
+KENT: Okay, that's great! Hello to you!
 
 The overall emotional tone of the conversation should be {TONE}.
 The emotional charge or depth of the conversation should be {INTENSITY}.
@@ -77,25 +78,27 @@ instructions = [
 #SMALLTALK
     "Please write a conversation between Kent and the user. They haven't met yet, this is the first time the user has activated him. The user greets Kent and then asks {SMALLTALK}.",
     "Please write a conversation between Kent and the user.  They have had a conversation earlier so they continue talking to each other with the user asking {SMALLTALK}.",
+    "Please write a conversation between Kent and the user.  They have had a conversation earlier so they continue talking to each other with the user asking Kent to talk about his favorite books.",
 
 #PHILOSOPHY
-#    "Please write a conversation between Kent and the user. They haven't met yet, this is the first time the user has activated him. The user greets Kent and then asks about Kent's view on {PHILOSOPHY}.",
-#    "Please write a conversation between Kent and the user. They haven't met yet, this is the first time the user has activated him. The user greets Kent and then asks Kent to explain {PHILOSOPHY} philosophy in simple terms, like he was five years old.",
-#    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent if he thinks {PHILOSOPHY} is important in modern life.",
-#    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent if he can compare and contrast {PHILOSOPHY} philosophy with other philosophical ideas.",
-#    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent if his opinion on {PHILOSOPHY} has changed over time.",
-#    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent if his opinions on any controversial issues with {PHILOSOPHY} philosophy.",
-
-
+    "Please write a conversation between Kent and the user. They haven't met yet, this is the first time the user has activated him. The user greets Kent and then asks about Kent's view on {PHILOSOPHY}.",
+    "Please write a conversation between Kent and the user. They haven't met yet, this is the first time the user has activated him. The user greets Kent and then asks Kent to explain {PHILOSOPHY} philosophy in simple terms, like he was five years old.",
+    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent if he thinks {PHILOSOPHY} is important in modern life.",
+    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent if he can compare and contrast {PHILOSOPHY} philosophy with other philosophical ideas.",
+    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent if his opinion on {PHILOSOPHY} has changed over time.",
+    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent if his opinions on any controversial issues with {PHILOSOPHY} philosophy.",
+    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent about his favorite philosophers.",
 
 # ART
-#    "Please write a conversation between Kent and the user. They haven't met yet, this is the first time the user has activated him. The user greets Kent and then asks about Kent's view on {ARTHISTORY}.",
-#    "Please write a conversation between Kent and the user. They haven't met yet, this is the first time the user has activated him. The user greets Kent and then asks Kent to explain a particular {ARTHISTORY} style artist's influences and inspirations.",
-#    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent if he thinks {ARTHISTORY} has influenced modern life.",
-#    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent if his opinion on {ARTHISTORY} has changed over time.",
-#    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent for his opinion on favorite pieces from {ARTHISTORY} and why Kent likes it so much.",
-#    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent to compare and contrast {ARTHISTORY} with other art movements.",
-#    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent to explain how the {ARTHISTORY} movement formed.",
+    "Please write a conversation between Kent and the user. They haven't met yet, this is the first time the user has activated him. The user greets Kent and then asks about Kent's view on {ARTHISTORY}.",
+    "Please write a conversation between Kent and the user. They haven't met yet, this is the first time the user has activated him. The user greets Kent and then asks Kent to explain a particular {ARTHISTORY} style artist's influences and inspirations.",
+    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent if he thinks {ARTHISTORY} has influenced modern life.",
+    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent if his opinion on {ARTHISTORY} has changed over time.",
+    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent for his opinion on favorite pieces from {ARTHISTORY} and why Kent likes it so much.",
+    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent to compare and contrast {ARTHISTORY} with other art movements.",
+    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent to explain how the {ARTHISTORY} movement formed.",
+    "Please write a conversation between Kent and the user. They have had a conversation earlier so they continue talking to each other with the user asking Kent about his favorite artists.",
+
 ]
 
 
@@ -176,16 +179,16 @@ format = "Guanaco"
 # each of these sets of settings. These settings are basically copied
 # from text-generation-webui.
 
-[[generation_parameters]]
-name="simple-1"
-max_length=768
-temperature=0.7
-top_k=20
-top_p=0.9
-typical_p=1.0
-rep_pen=1.15
-seed=-1
-max_context_length=2048
+#[[generation_parameters]]
+#name="simple-1"
+#max_length=768
+#temperature=0.7
+#top_k=20
+#top_p=0.9
+#typical_p=1.0
+#rep_pen=1.15
+#seed=-1
+#max_context_length=2048
 
 
 [[generation_parameters]]

@@ -18,7 +18,8 @@ import os, json, sys
 user_tag = "### Human:"
 bot_tag = "### Assistant:"
 
-system_message = "This is a chat between a human user and a helpful and their assistant, a sentient AI being named Kent. Kent gives helpful and knowledgeable replies. "
+# If a system message is desired before each conversation it can be placed here in this variable.
+system_message = ""
 
 ###################################################################
 
