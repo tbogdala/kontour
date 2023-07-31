@@ -1,7 +1,6 @@
-#    --model_name_or_path openlm-research/open_llama_7b \
 python qlora.py \
-    --model_name_or_path openlm-research/open_llama_7b \
-    --output_dir ./output/open_llama_7b_kent \
+    --model_name_or_path huggyllama/llama-30b \
+    --output_dir ./output/llama_33b_kent \
     --logging_steps 1 \
     --save_strategy steps \
     --data_seed 42 \
@@ -37,4 +36,4 @@ python qlora.py \
     --lora_dropout 0.1 \
     --weight_decay 0.0 \
     --seed 0 \
-    --max_memory_MB 23000
+    --max_memory_MB 23750
