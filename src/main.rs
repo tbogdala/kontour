@@ -394,7 +394,7 @@ fn generate_report(jobs: Vec<TextgenJob>, report_dir_path: &Path, sort_report: b
             }
         });
     }
-    
+
     // the vector should be sorted, so now we iterate over all of them and keep track
     // of when the instruction changes so we can write a new header.
     let mut current_instruction = String::new();
