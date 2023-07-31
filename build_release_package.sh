@@ -18,7 +18,7 @@
 #
 
 # Set the release tag
-RELEASE_TAG="v1.0.0"
+RELEASE_TAG="v1.1.0"
 
 # Set the output directory for archives
 OUTPUT_DIR="target"
