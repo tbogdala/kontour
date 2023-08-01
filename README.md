@@ -94,7 +94,7 @@ raw json jobs from kontour, clean them up a bit and put them into a more flexibl
 format. From there, they can be assmebled into whatever dataset format is requied by the training software.
 Currently the example provided uses the qlora project and the 'oasst1' format. 
 
-### Example Steps for Datset Generation
+### Example Steps for Dataset Generation
 
 An example of how I'd run kontour to generate a dataset of 500 conversations would look like this:
 
